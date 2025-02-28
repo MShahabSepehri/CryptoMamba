@@ -161,7 +161,6 @@ def run_model(model, dataloader, factors=None):
 
     return timetamps, targets, preds
 
-
 if __name__ == '__main__':
     args = get_args()
     init_dir_flag = False
@@ -192,9 +191,7 @@ if __name__ == '__main__':
         feature_list = config.get('features', ['Timestamp', 'Open', 'High', 'Low', 'Close'])
 
         if feature_list == "all":
-            # get header from data file
-            data = io_tools.load_data(data_config.get('data_path'))
-            feature_list = list(data.columns)
+            feature_list = io_tools.get_train_csv_columns(data_config)
         elif use_volume:
             feature_list.append('Volume')
 

@@ -147,9 +147,15 @@ if __name__ == "__main__":
         data['Timestamp'] = [float(time.mktime(datetime.strptime(x, "%Y-%m-%d").timetuple())) for x in data['Date']]
     data = data.sort_values(by='Timestamp').reset_index()
 
-    train_transform = DataTransform(is_train=True, use_volume=use_volume)
-    val_transform = DataTransform(is_train=False, use_volume=use_volume)
-    test_transform = DataTransform(is_train=False, use_volume=use_volume)
+    feature_list = config.get('features', ['Timestamp', 'Open', 'High', 'Low', 'Close'])
+    if feature_list == "all":
+        feature_list = io_tools.get_train_csv_columns(data_config)
+    elif use_volume:
+        feature_list.append('Volume')
+
+    train_transform = DataTransform(is_train=True, features=feature_list)
+    val_transform = DataTransform(is_train=False, features=feature_list)
+    test_transform = DataTransform(is_train=False, features=feature_list)
     data_module = CMambaDataModule(data_config,
                                    train_transform=train_transform,
                                    val_transform=val_transform,

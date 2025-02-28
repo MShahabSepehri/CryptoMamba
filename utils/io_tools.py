@@ -2,7 +2,7 @@ import yaml
 import pickle
 import pathlib
 import importlib
-
+import pandas as pd
 
 def get_obj_from_str(string, reload=False):
     module, cls = string.rsplit(".", 1)
@@ -52,3 +52,8 @@ def load_pickle(path: str):
     with open(path, 'rb') as f:
         data = pickle.load(f)
     return data
+
+def get_train_csv_columns(data_config):
+    file_path = f"{data_config.get('root')}/{data_config.get('start_date')}_{data_config.get('end_date')}_{data_config.get('jumps')}/train.csv"
+    data = pd.read_csv(file_path, nrows=0)
+    return [col for col in data.columns if not col.startswith('Unnamed')]
