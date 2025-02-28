@@ -1,4 +1,6 @@
 
+total_trades = 0
+
 def buy_sell_smart(today, pred, balance, shares, risk=5):
     global total_trades
 
@@ -23,10 +25,11 @@ def buy_sell_smart(today, pred, balance, shares, risk=5):
         balance = 0
     return balance, shares
 
-total_trades = 0
+
 
 
 def buy_sell_smart_w_short(today, pred, balance, shares, risk=5, max_n_btc=0.002):
+    global total_trades
     diff = pred * risk / 100
     if today < pred - diff:
         total_trades += 1 if shares > 0 else 0
