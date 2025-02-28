@@ -189,7 +189,16 @@ if __name__ == '__main__':
         model, normalize = load_model(config, args.ckpt_path) 
 
         use_volume = config.get('use_volume', False)
-        test_transform = DataTransform(is_train=False, use_volume=use_volume)
+        feature_list = config.get('features', ['Timestamp', 'Open', 'High', 'Low', 'Close'])
+
+        if feature_list == "all":
+            # get header from data file
+            data = io_tools.load_data(data_config.get('data_path'))
+            feature_list = list(data.columns)
+        elif use_volume:
+            feature_list.append('Volume')
+
+        test_transform = DataTransform(is_train=False, features=feature_list)
         data_module = CMambaDataModule(data_config,
                                         train_transform=test_transform,
                                         val_transform=test_transform,
@@ -221,13 +230,17 @@ if __name__ == '__main__':
             shift = factors.get(model.y_key).get('min')
             data[model.y_key] = data[model.y_key] * scale + shift
 
-        balance, balance_in_time = trade(data, time_key, timstamps, targets, preds, 
+        balance, balance_in_time, total_trades = trade(data, time_key, timstamps, targets, preds, 
                                          balance=args.balance, mode=args.trade_mode, 
                                          risk=args.risk, y_key=model.y_key)
         # raise ValueError(max_drawdown(balance_in_time))
 
         print(f'{conf} -- Final balance: {round(balance, 2)}')
         print(f'{conf} -- Maximum Draw Down : {round(max_drawdown(balance_in_time) * 100, 2)}')
+        print(f'{conf} -- Total gain in %: {round((balance - args.balance) / args.balance * 100, 2)}')
+        print(f'{conf} -- Price increase in %: {round((targets[-1] - targets[0]) / targets[0] * 100, 2)}')
+        print(f'{conf} -- Trading gain diff in %: {round((((balance - args.balance)/args.balance) - ((targets[-1] - targets[0]) )/ targets[0]) * 100, 2)}')
+        print(f'{conf} -- Number of trades: {total_trades}')
 
         label = conf.replace("_nv", "").replace("_v", "")
         if label == 'cmamba':

@@ -49,18 +49,25 @@ class DataConverter:
     def process_data(self):
         data, start, stop = self.load_data()
         new_df = {}
-        for key in ['Timestamp', 'High', 'Low', 'Open', 'Close', 'Volume']:
+        for key in data.keys():
+            if key == 'Timestamp_orig':
+                continue
+            if key == 'Date':
+                continue
+            
             new_df[key] = []
         for i in tqdm(range(start, stop - 3600, self.jumps)):
-            high, low, open, close, vol = self.merge_data(data, i, self.jumps)
-            if high is None:
+            merged_data = self.merge_data(data, i, self.jumps)
+
+            if merged_data is None:
+                print(f'No data found for timestamp {i}')
                 continue
-            new_df.get('Timestamp').append(i)
-            new_df.get('High').append(high)
-            new_df.get('Low').append(low)
-            new_df.get('Open').append(open)
-            new_df.get('Close').append(close)
-            new_df.get('Volume').append(vol)
+
+            for key in new_df.keys():
+                if key == 'Timestamp':
+                    new_df.get(key).append(i)
+                else:
+                    new_df.get(key).append(float(merged_data.get(key)))
 
         df = pd.DataFrame(new_df)
 
@@ -122,6 +129,10 @@ class DataConverter:
     def load_data(self):
         df = pd.read_csv(self.data_path)
         if 'Timestamp' not in df.keys():
+            if 'Date' not in df.keys():
+                print("no date in dataset")
+                return
+
             dates = df.get('Date').to_list()
             df['Timestamp'] = [self.generate_timestamp(x, d_format="%Y-%m-%d") for x in dates]
         if self.start_date is None:
@@ -141,7 +152,14 @@ class DataConverter:
         tmp = data[data['Timestamp'] >= start].reset_index(drop=True)
         tmp = tmp[tmp['Timestamp'] < start + jump].reset_index(drop=True)
         if len(tmp) == 0:
-            return None, None, None, None, None
+            return None #, None, None, None, None
+        if len(tmp) == 1:
+            return tmp.iloc[0]
+            # _, high, low, open, close, volume = DataConverter.get_row_values(tmp.iloc[0])
+            # return high, low, open, close, volume
+
+        print("\033[91mMore than one row\033[0m")
+
         _, high, low, open, close, _ = DataConverter.get_row_values(tmp.iloc[0])
         count = 1
         vol = 0
@@ -151,6 +169,7 @@ class DataConverter:
             low = min(low, l)
             vol += v
             count += 1
+        
         return high, low, open, close, vol
     
     @staticmethod

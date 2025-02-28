@@ -136,9 +136,18 @@ if __name__ == "__main__":
     use_volume = args.use_volume
     if not use_volume:
         use_volume = config.get('use_volume')
-    train_transform = DataTransform(is_train=True, use_volume=use_volume)
-    val_transform = DataTransform(is_train=False, use_volume=use_volume)
-    test_transform = DataTransform(is_train=False, use_volume=use_volume)
+
+    feature_list = config.get('features', ['Timestamp', 'Open', 'High', 'Low', 'Close'])
+    if feature_list == "all":
+        # get header from data file
+        data = io_tools.load_data(data_config.get('data_path'))
+        feature_list = list(data.columns)
+    elif use_volume:
+        feature_list.append('Volume')
+    
+    train_transform = DataTransform(is_train=True, features=feature_list)
+    val_transform = DataTransform(is_train=False, features=feature_list)
+    test_transform = DataTransform(is_train=False, features=feature_list)
 
     model, normalize = load_model(config, args.logger_type)
 
